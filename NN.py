@@ -33,9 +33,6 @@ for i in range(0,1568):
     temp=np.array(temp)
     test.append(temp)
 test=np.array(test)
-print(train.shape)
-print(PE_train.shape)
-print(test.shape)
 X = tf.placeholder("float", [None, 4])
 Y = tf.placeholder("float", [None,1])
 weights = {
@@ -52,27 +49,34 @@ def neural_net(x):
     #hidden layer 1
     layer_1 = tf.add(tf.matmul(x, weights['h1']), biases['b1'])
     layer_1 = tf.nn.relu(layer_1)
-
     layer_2 = tf.add(tf.matmul(layer_1, weights['h2']), biases['b2'])
     layer_2 = tf.nn.relu(layer_2)
     # output layer
     out_layer = tf.matmul(layer_2, weights['out']) + biases['out']
     return (out_layer)
 Y_hat=neural_net(X)
-loss_op=tf.losses.mean_squared_error(Y,Y_hat)
+loss_op=tf.losses.huber_loss(Y,Y_hat)# huber loss advanced loss for regression
 optimizer = tf.train.AdamOptimizer(learning_rate=0.01)
 train_op = optimizer.minimize(loss_op)
 init = tf.global_variables_initializer()
 epoch=2000
 with tf.Session() as sess:
     sess.run(init)
+    saver = tf.train.Saver()
     for i in range(0,epoch):
         sess.run(train_op,feed_dict={X:train,Y:PE_train})
         loss=sess.run(loss_op,feed_dict={X:train,Y:PE_train})
         if(i%100==0):
             print("epoch no"+str(i),(loss))
         pred=sess.run(Y_hat,feed_dict={X:test})
-plt.plot((pred), color='red', label='Prediction')
-plt.plot(PE_test, color='blue', label='Orignal')
-plt.legend(loc='upper left')
-plt.show()
+    plt.plot((pred), color='red', label='Prediction')
+    plt.plot(PE_test, color='blue', label='Orignal')
+    plt.legend(loc='upper left')
+    plt.show()
+    count=0
+    for i in range(0,len(pred)):
+        if(abs(pred[i]-PE_test[i])<0.5):
+            count=count+1
+    acc=100*(count/len(pred))
+    print("accuracy",acc)
+
